@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <header>
+
+    </header>
+
+    <body>
+        <header>
+            <h1>Conversor C para MarieJS</h1>
+        </header>
+
+        <main>
+            <textarea id="codigoFonte" cols="70" rows="30">
+            </textarea>
+
+            <textarea id="codigoDestino" cols="70" rows="30">
+            </textarea>
+
+            <button id="converter">Converter</button>
+        </main>
+
+        <footer>
+            <p>Arquitetura de Computadores &copy; Ciência da Computação</p>
+        </footer>
+    </body>
+
+    <script>
+        let botaoConverter = document.querySelector('#converter')
+        let codigoMarie = '';
+
+        // Tipos de dados em C:
+        //     char
+        //     int
+        //     float
+        //     void
+        
+        
+        botaoConverter.addEventListener('click', () => {
+            document.querySelector('#codigoFonte').value.trim().split('\n').forEach(linha => {
+                if((linha.includes('int') && !linha.includes('print')) || linha.includes('char') || linha.includes('float')) {
+                    let tipoDado = linha.substring(0, linha.indexOf(' ') + 1);
+                    switch(tipoDado) {
+                        case 'int':
+                            convertIntToMarie(linha);
+                            break;
+                        case 'char':
+                            convertCharToMarie(linha);
+                            break;
+                        case 'float':
+                            convertFloatToMarie(linha);
+                            break;
+                        case 'void':
+                            convertVoidToMarie(linha);
+                            break;
+                    }
+                } else if(linha.includes('if')) {
+
+                }
+            })
+        })
+
+
+        function convertIntToMarie(linha) {
+            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
+
+            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
+
+            } else {
+                
+            }
+        }
+
+        function convertCharToMarie(linha) {
+            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
+
+            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
+
+            } else {
+                
+            }
+        }
+
+        function convertFloatToMarie(linha) {
+            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
+
+            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
+
+            } else {
+                
+            }
+        }
+
+        function convertVoidToMarie(linha) {
+            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
+
+            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
+
+            } else {
+                
+            }
+        }
+
+    </script>
+</html>
