@@ -25,79 +25,119 @@
     </body>
 
     <script>
-        let botaoConverter = document.querySelector('#converter')
-        let codigoMarie = '';
+        let botaoConverter = document.querySelector('#converter');
+        let codigoMarie = [];
 
         // Tipos de dados em C:
         //     char
         //     int
         //     float
         //     void
+
+
+        /*
+        
+        #include <stdio.h>
+        #include <stdlib.h>
+
+        int main() {
+            int n, b, c = 0;
+            float a;
+
+            printf("Teste");
+
+            return 0;
+        }
+        
+        */
         
         
+
+        // Ação do botão para converter o código em C para o Marie
         botaoConverter.addEventListener('click', () => {
             document.querySelector('#codigoFonte').value.trim().split('\n').forEach(linha => {
                 if((linha.includes('int') && !linha.includes('print')) || linha.includes('char') || linha.includes('float')) {
-                    let tipoDado = linha.substring(0, linha.indexOf(' ') + 1);
-                    switch(tipoDado) {
-                        case 'int':
-                            convertIntToMarie(linha);
-                            break;
-                        case 'char':
-                            convertCharToMarie(linha);
-                            break;
-                        case 'float':
-                            convertFloatToMarie(linha);
-                            break;
-                        case 'void':
-                            convertVoidToMarie(linha);
-                            break;
-                    }
+                    convertTypeToMarie(linha.trim());                
                 } else if(linha.includes('if')) {
 
+                } else if(linha.includes('printf')) {
+                    convertPrintToMarie(linha.trim());
                 }
             })
+
+            document.querySelector('#codigoDestino').textContent = codigoMarie;
         })
 
 
-        function convertIntToMarie(linha) {
-            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
 
+
+
+        // Função para converter tipos de dados do C para o Marie. A ideia é converter tudo para hexadecimal para dar menos trabalho
+        function convertTypeToMarie(linha) {
+            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
+                if(!linha.includes('main')) {
+
+                }
             } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
 
             } else {
-                
+
+                if(linha.includes(',')) {
+                    let texto = linha.split(',')
+                    for(let i in texto) {
+
+                        texto[i] = texto[i].replace('int', ' ')  || texto[i].replace('float', '') || texto[i].replace('char', '')  || texto[i].replace('void', '')
+                        
+                        if(texto[i].includes('=')) {
+                            codigoMarie.push(`${texto[i].split('=')[0].toUpperCase()}, HEX ${texto[i].split('=')[1].replace(';', '')}\n`);
+                        } else {
+                            codigoMarie.push(`${texto[i].toUpperCase()}, HEX 0\n`);
+                        }
+                    }                                     
+                } else {
+                    codigoMarie.push(`${linha.slice(linha.indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0\n`);
+                }
             }
         }
 
-        function convertCharToMarie(linha) {
-            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
 
-            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
+
+
+
+
+
+        // Função responsável por converter o printf (Função que escreve normalmente na saída padrão) para o print do Marie
+        function convertPrintToMarie(linha) {
+            if(linha.includes('%')) {
 
             } else {
-                
+                let texto = linha.substring(linha.indexOf("("), linha.indexOf(")"));
+                let hexadecimalText = texto.hexEncode()
+                console.log(hexadecimalText)
             }
         }
 
-        function convertFloatToMarie(linha) {
-            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
 
-            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
 
-            } else {
-                
+
+
+
+
+
+        // Adicionado função à classe String do Javascript para obter o valor em hexadecimal de um caractere
+        String.prototype.hexEncode = function(){
+            var hex, i;
+
+            var result = "";
+            for (i=0; i<this.length; i++) {
+                hex = this.charCodeAt(i).toString(16);
+                if(hex != '22')
+                    result += ("HEX 00"+hex) + " \n";
             }
-        }
 
-        function convertVoidToMarie(linha) {
-            if(linha.includes('(') && linha.includes(')') && linha.includes('{')) {
+            result += 'HEX 0000';
 
-            } else if(linha.includes('(') && linha.includes(')') && !linha.includes('{')) {
-
-            } else {
-                
-            }
+            return result
         }
 
     </script>
