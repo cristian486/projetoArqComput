@@ -26,7 +26,11 @@
 
     <script>
         let botaoConverter = document.querySelector('#converter');
+        let obj = {};
         let codigoMarie = [];
+        let variables = []
+        let operacoes = ['+', '-', '*', '/']
+        let counter = 1
 
         // Tipos de dados em C:
         //     char
@@ -46,6 +50,12 @@
 
             printf("Teste");
 
+
+            n = 1 + 5;
+            b = 8 - 9;
+            c = 1 * 10;
+            a = 10 / 2;
+
             return 0;
         }
         
@@ -55,17 +65,28 @@
 
         // Ação do botão para converter o código em C para o Marie
         botaoConverter.addEventListener('click', () => {
+            codigoMarie = [];
+            variables = [];
+            document.querySelector('#codigoDestino').textContent = '';
+
             document.querySelector('#codigoFonte').value.trim().split('\n').forEach(linha => {
-                if((linha.includes('int') && !linha.includes('print')) || linha.includes('char') || linha.includes('float')) {
+
+                if((linha.includes('int') && !linha.includes('print')) || linha.includes('char') || linha.includes('float') || linha.includes('void')) {
                     convertTypeToMarie(linha.trim());                
                 } else if(linha.includes('if')) {
 
                 } else if(linha.includes('printf')) {
                     convertPrintToMarie(linha.trim());
+                } else if(linha.includes('/') || linha.includes('*') || linha.includes('-') || linha.includes('+')) {
+                    convertOperationToMarie(linha);
                 }
+
             })
 
-            document.querySelector('#codigoDestino').textContent = codigoMarie;
+            let string = '';
+            codigoMarie.push(`\n HALT`)
+            codigoMarie.forEach(linha => string += linha.trim() + '\n');
+            document.querySelector('#codigoDestino').textContent = string;
         })
 
 
@@ -85,46 +106,103 @@
                 if(linha.includes(',')) {
                     let texto = linha.split(',')
                     for(let i in texto) {
-
+                        let textoOriginal = texto[i];
                         texto[i] = texto[i].replace('int', ' ')  || texto[i].replace('float', '') || texto[i].replace('char', '')  || texto[i].replace('void', '')
                         
                         if(texto[i].includes('=')) {
-                            codigoMarie.push(`${texto[i].split('=')[0].toUpperCase()}, HEX ${texto[i].split('=')[1].replace(';', '')}\n`);
+                            obj[textoOriginal] = `${texto[i].split('=')[0].trim().toUpperCase()}, HEX ${texto[i].split('=')[1].trim().replace(';', '')}`;
+                            variables.push(`${texto[i].split('=')[0].trim().toUpperCase()}`)
+                            codigoMarie.push(`${texto[i].split('=')[0].trim().toUpperCase()}, HEX ${texto[i].split('=')[1].trim().replace(';', '')}`);
                         } else {
-                            codigoMarie.push(`${texto[i].toUpperCase()}, HEX 0\n`);
+                            obj[textoOriginal] = `${texto[i].trim().toUpperCase()}, HEX 0`
+                            variables.push(`${texto[i].trim().toUpperCase()}`)
+                            codigoMarie.push(`${texto[i].trim().toUpperCase()}, HEX 0`);
                         }
                     }                                     
                 } else {
-                    codigoMarie.push(`${linha.slice(linha.indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0\n`);
+                    obj[linha] = `${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0`;
+                    variables.push(`${linha.toUpperCase().slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).replace(';', '')}`)
+                    codigoMarie.push(`${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0`);
                 }
             }
         }
 
 
-
-
-
-
-
         // Função responsável por converter o printf (Função que escreve normalmente na saída padrão) para o print do Marie
         function convertPrintToMarie(linha) {
             if(linha.includes('%')) {
-
+                
             } else {
-                let texto = linha.substring(linha.indexOf("("), linha.indexOf(")"));
-                let hexadecimalText = texto.hexEncode()
-                console.log(hexadecimalText)
+                let texto = linha.substring(linha.indexOf("(") + 1, linha.indexOf(")"));
+                let hexadecimalText = texto.trim().hexEncode()
+                obj[linha] = `${texto.toUpperCase().replace(';', '')}, HEX 0`;
+                codigoMarie.push(`${hexadecimalText.toUpperCase().replace(';', '')}, HEX 0`);
             }
         }
 
 
+        // Converte uma operação básica (+, -, *, /) para o Marie
+        function convertOperationToMarie(linha) {
+            let operation;
+            let cast = false;
+            let valores = [];
+            let variaveisUsadas = [];
+            let conta = ``;
+            
+            for(let i in operacoes) {
+                if(linha.includes(`${operacoes[i]}`)) {
+                    operation = operacoes[i]
+
+                    if(linha.includes('(') && linha.includes(')'))
+                        cast = true
+                    
+                    for(let j in variables) {
+                        let texto = linha.slice(linha.indexOf('=') + 1, linha.length).replace(';', '')
+                        if(texto.toUpperCase().includes(`${variables[j]}`))
+                            variaveisUsadas.push(variables[j])
+                    }
+
+                    break
+                }
+            }
+
+            valores = linha.slice(linha.indexOf('=') + 1, linha.length).replace(';', '').split(operation);
+
+            switch(operation) {
+                case '+':
+                    if(variaveisUsadas.length > 0) {
+                        for(let i in variaveisUsadas) {
+                            conta += `LOAD ${linha.slice(0, linha.indexOf('='))}\n`
+                            conta += `ADD ${variaveisUsadas[i]}\n`
+                        }
+                    }
+
+                    for(let i in valores) {
+                        conta += `i${counter}, HEX ${valores[i]}\n`
+                        conta += `LOAD ${linha.slice(0, linha.indexOf('='))}\n`
+                        conta += `ADD i${counter}\n`
+                        conta += `STORE ${linha.slice(0, linha.indexOf('='))}\n`
+                        counter++
+                    }
+
+                    obj[linha] = conta
+                    break;
+                case '-':
+                    break;
+                case '*':
+                    break;
+                case '/':
+                    break;
+            }
+
+            if(conta != undefined)
+                codigoMarie.push(conta)
+        }
 
 
+        
 
-
-
-
-        // Adicionado função à classe String do Javascript para obter o valor em hexadecimal de um caractere
+        // Adicionado função à classe String do Javascript para obter o valor em hexadecimal de uma string
         String.prototype.hexEncode = function(){
             var hex, i;
 
@@ -132,7 +210,7 @@
             for (i=0; i<this.length; i++) {
                 hex = this.charCodeAt(i).toString(16);
                 if(hex != '22')
-                    result += ("HEX 00"+hex) + " \n";
+                    result += ("HEX 00"+ hex + '\n');
             }
 
             result += 'HEX 0000';
