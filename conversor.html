@@ -40,24 +40,22 @@
             let start = document.querySelector('#codigoFonte').selectionStart
             let end = document.querySelector('#codigoFonte').selectionEnd
             let temp = document.querySelector('#codigoFonte').value.slice(start, end)
-             
+
             let chaves = Object.keys(obj)
             for(let i = 0; i < chaves.length; i++) {
                 if(chaves[i].includes(temp)) {
-                    
+
                 }
             }
         })
 
-        // Tipos de dados em C:
-        //     char
-        //     int
-        //     float
-        //     void
+/*
+Tipos de dados em C:
+char
+int
+float
+void
 
-
-        /*
-        
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -75,8 +73,38 @@ a = 10 / 2;
 
 return 0;
 }
+
+
+
+Exemplo de código para multiplicação
+
+
+input
+store x
+
+input
+store y
+
+loop, load sum
+add x
+store sum
+load y
+subt v1
+store y
+skipcond 400
+jump loop
+
+load sum
+output
+
+halt
+
+x, dec 0
+y, dec 0
+v1, dec 1
+sum, dec 0
         
-        */
+*/
         
         
 
@@ -84,6 +112,8 @@ return 0;
         botaoConverter.addEventListener('click', () => {
             codigoMarie = [];
             variables = [];
+            variables.push(`v1, DEC 1\n`)
+            variables.push(`SUM, DEC 0\n`)
             document.querySelector('#codigoDestino').textContent = '';
 
             document.querySelector('#codigoFonte').value.trim().split('\n').forEach(linha => {
@@ -128,22 +158,16 @@ return 0;
                         texto[i] = texto[i].replace('int', ' ')  || texto[i].replace('float', '') || texto[i].replace('char', '')  || texto[i].replace('void', '')
                         
                         if(texto[i].includes('=')) {
-                            obj[textoOriginal] = `${texto[i].split('=')[0].trim().toUpperCase()}, HEX ${texto[i].split('=')[1].trim().replace(';', '')}`;
-                            //variables.push(`${texto[i].split('=')[0].trim().toUpperCase()}`)
-                            //codigoMarie.push(`${texto[i].split('=')[0].trim().toUpperCase()}, HEX ${texto[i].split('=')[1].trim().replace(';', '')}`);
-                            variables.push(`${texto[i].split('=')[0].trim().toUpperCase()}, HEX ${texto[i].split('=')[1].trim().replace(';', '')}`);
+                            obj[textoOriginal] = `${texto[i].split('=')[0].trim().toUpperCase()}, DEC ${texto[i].split('=')[1].trim().replace(';', '')}`;
+                            variables.push(`${texto[i].split('=')[0].trim().toUpperCase()}, DEC ${texto[i].split('=')[1].trim().replace(';', '')}`);
                         } else {
-                            obj[textoOriginal] = `${texto[i].trim().toUpperCase()}, HEX 0`
-                            //variables.push(`${texto[i].trim().toUpperCase()}`)
-                            //codigoMarie.push(`${texto[i].trim().toUpperCase()}, HEX 0`);
-                            variables.push(`${texto[i].trim().toUpperCase()}, HEX 0`);
+                            obj[textoOriginal] = `${texto[i].trim().toUpperCase()}, DEC 0`
+                            variables.push(`${texto[i].trim().toUpperCase()}, DEC 0`);
                         }
                     }                                     
                 } else {
-                    obj[linha] = `${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0`;
-                    //variables.push(`${linha.toUpperCase().slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).replace(';', '')}`)
-                    //codigoMarie.push(`${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0`);
-                    variables.push(`${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, HEX 0`);
+                    obj[linha] = `${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, DEC 0`;
+                    variables.push(`${linha.slice(linha.trim().indexOf(' '), linha.indexOf('=') + 1 || linha.length).toUpperCase().replace(';', '')}, DEC 0`);
                 }
             }
         }
@@ -156,7 +180,7 @@ return 0;
             } else {
                 let texto = linha.substring(linha.indexOf("(") + 1, linha.indexOf(")"));
                 let hexadecimalText = texto.trim().hexEncode()
-                obj[linha] = `${texto.toUpperCase().replace(';', '')}, HEX 0`;
+                obj[linha] = `${texto.toUpperCase().replace(';', '')}, DEC 0`;
                 codigoMarie.push(`${hexadecimalText.toUpperCase().replace(';', '')}`);
             }
         }
@@ -165,7 +189,6 @@ return 0;
         // Converte uma operação básica (+, -, *, /) para o Marie
         function convertOperationToMarie(linha) {
             let operation;
-            let cast = false;
             let valores = [];
             let variaveisUsadas = [];
             let conta = ``;
@@ -174,8 +197,6 @@ return 0;
                 if(linha.includes(`${operacoes[i]}`)) {
                     operation = operacoes[i]
 
-                    if(linha.includes('(') && linha.includes(')'))
-                        cast = true
                     
                     for(let j in variables) {
                         let texto = linha.slice(linha.indexOf('=') + 1, linha.length).replace(';', '')
@@ -199,8 +220,7 @@ return 0;
                     }
 
                     for(let i in valores) {
-                        variables.push(`i${counter}, HEX ${valores[i]}\n`)
-                        //conta += `i${counter}, HEX ${valores[i]}\n`
+                        variables.push(`i${counter}, DEC ${valores[i]}\n`)
                         conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
                         conta += `ADD i${counter}\n`
                         conta += `STORE ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
@@ -218,8 +238,7 @@ return 0;
                     }
 
                     for(let i in valores) {
-                        variables.push(`i${counter}, HEX ${valores[i]}\n`)
-                        //conta += `i${counter}, HEX ${valores[i]}\n`
+                        variables.push(`i${counter}, DEC ${valores[i]}\n`)
                         conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
                         conta += `SUBT i${counter}\n`
                         conta += `STORE ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
@@ -229,6 +248,12 @@ return 0;
                     obj[linha] = conta
                     break;
                 case '*':
+                    if(variaveisUsadas.length > 0) {
+                        for(let i in variaveisUsadas) {
+                            conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
+                            conta += `ADD ${variaveisUsadas[i]}\n`
+                        }
+                    }
                     break;
                 case '/':
                     break;
