@@ -103,6 +103,41 @@ x, dec 0
 y, dec 0
 v1, dec 1
 sum, dec 0
+
+
+
+
+
+
+
+
+Input
+Store x
+
+input
+store y
+
+divisao, load dividendo
+add v1
+store dividendo
+load x
+subt y
+store x
+Skipcond 000
+jump divisao
+
+
+
+load dividendo
+Output
+
+
+halt
+
+x, dec 0
+y, dec 0
+v1, dec 1
+dividendo, dec -1
         
 */
         
@@ -114,6 +149,7 @@ sum, dec 0
             variables = [];
             variables.push(`v1, DEC 1\n`)
             variables.push(`SUM, DEC 0\n`)
+            variables.push(`DIVIDENDO, DEC -1\n`)
             document.querySelector('#codigoDestino').textContent = '';
 
             document.querySelector('#codigoFonte').value.trim().split('\n').forEach(linha => {
@@ -136,10 +172,6 @@ sum, dec 0
             variables.forEach(variavel => string += variavel.trim() + '\n')
             document.querySelector('#codigoDestino').textContent = string;
         })
-
-
-
-
 
         // Função para converter tipos de dados do C para o Marie. A ideia é converter tudo para hexadecimal para dar menos trabalho
         function convertTypeToMarie(linha) {
@@ -176,7 +208,13 @@ sum, dec 0
         // Função responsável por converter o printf (Função que escreve normalmente na saída padrão) para o print do Marie
         function convertPrintToMarie(linha) {
             if(linha.includes('%')) {
-                
+                let texto = linha.slice(linha.indexOf(','), linha.length)
+                texto = texto.replace(')', '')
+                texto = texto.replace(';', '')
+                texto = texto.split(',')
+                for(let i in texto)
+                    if(texto[i] != '')
+                    codigoMarie.push(`Load ${texto[i]}\nOutput\n`)
             } else {
                 let texto = linha.substring(linha.indexOf("(") + 1, linha.indexOf(")"));
                 let hexadecimalText = texto.trim().hexEncode()
@@ -188,75 +226,163 @@ sum, dec 0
 
         // Converte uma operação básica (+, -, *, /) para o Marie
         function convertOperationToMarie(linha) {
-            let operation;
-            let valores = [];
-            let variaveisUsadas = [];
             let conta = ``;
+            let operationCount = -1
+            let index = 0
+            let firstOperation = true
+            let lastOperation
+            let varDefinida = linha.slice(0, linha.indexOf('=')).toUpperCase()
+            linha = linha.slice(linha.indexOf('=') + 1, linha.length)
             
-            for(let i in operacoes) {
-                if(linha.includes(`${operacoes[i]}`)) {
-                    operation = operacoes[i]
+            for(let i = 0; i < linha.length; i++) {
+                if(verficaOperacao(linha[i]) || linha[i] === ';') {
+                    operationCount++
 
-                    
-                    for(let j in variables) {
-                        let texto = linha.slice(linha.indexOf('=') + 1, linha.length).replace(';', '')
-                        if(texto.toUpperCase().includes(`${variables[j]}`))
-                            variaveisUsadas.push(variables[j])
+                    if(operationCount === 1 && firstOperation) {
+                        let contaAtual = linha.slice(index, i)
+                        index = i
+                        firstOperation = false
+
+                        switch(lastOperation) {
+                            case '+':
+                                contaAtual = contaAtual.split(lastOperation)
+                                conta += `LOAD ${varDefinida}\n`
+                                
+                                for(let i in contaAtual) {
+                                    if(typeof contaAtual[i] === 'number' && isFinite(contaAtual[i])) {
+                                        conta += `Add ${contaAtual[i]}\n`;
+                                    } else if(contaAtual[i] != '') {
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}\n`)
+                                        conta+= `Add i${counter}\n`
+                                        counter++
+                                    }
+                                }
+                                conta += `Store ${varDefinida}\n`
+                                break;
+                            case '-':
+                                contaAtual = contaAtual.split(lastOperation)
+                                conta += `LOAD ${varDefinida}\n`
+                                
+                                for(let i in contaAtual) {
+                                    if(typeof contaAtual[i] === 'number' && isFinite(contaAtual[i])) {
+                                        conta += `Subt ${contaAtual[i]}\n`;
+                                    } else if(contaAtual[i] != '') {
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}\n`)
+                                        conta+= `Subt i${counter}\n`
+                                        counter++
+                                    }
+                                }
+                                conta += `Store ${varDefinida}\n`
+                                break;
+                            case '*':
+                                contaAtual = contaAtual.split(lastOperation)
+                                
+                                for(let i in contaAtual) 
+                                    if(contaAtual[i] != '') 
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}`)
+                                
+                                conta += `MULTIPLICACAOi${counter}, load SUM\n`
+                                conta += `Add ${varDefinida}\n`
+                                conta += `Store SUM\n`
+                                conta += `Load i${counter}\n`
+                                conta += `Subt v1\n`
+                                conta += `Store i${counter}\n`
+                                conta += `Skipcond 400\n`
+                                conta += `Jump MULTIPLICACAOi${counter}\n`
+                                conta += `Load ${varDefinida}\n`
+                                conta += `Subt ${varDefinida}\n`
+                                conta += `Add MULTIPLICACAOi${counter}\n`
+                                conta += `Store ${varDefinida}\n`
+                                counter++
+                                break;
+                            case '/':
+                                contaAtual = contaAtual.split(lastOperation)
+                                
+                                for(let i in contaAtual) 
+                                    if(contaAtual[i] != '') 
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}`)
+                                
+                                conta += `DIVISAO, Load DIVIDENDO\n`
+                                conta += `Add v1\n`
+                                conta += `Store DIVIDENDO\n`
+                                conta += `Load ${varDefinida}\n`
+                                conta += `Subt i${counter}\n`
+                                conta += `Store ${varDefinida}\n`
+                                conta += `Skipcond 000\n`
+                                conta += `Jump DIVISAO\n`
+                                conta += `Load ${varDefinida}\n`
+                                conta += `Subt ${varDefinida}\n`
+                                conta += `Add DIVIDENDO\n`
+                                conta += `Store ${varDefinida}\n`
+                                break;
+                        }
+                    } else if(!firstOperation) {
+                        let proximaOperacao;
+                        
+                        for(let j = i; j < linha.length; j++) {
+                            if(linha[j] === ';' || verficaOperacao(linha[j])) {
+                                proximaOperacao = j;
+                                break;
+                            }
+                        }
+
+                        let contaAtual = linha.slice(index, proximaOperacao )
+                        index = proximaOperacao
+
+                        switch(lastOperation) {
+                            case '+':
+                                contaAtual = contaAtual.split(lastOperation)
+                                conta += `LOAD ${varDefinida}\n`
+                                
+                                for(let i in contaAtual) {
+                                    if(typeof contaAtual[i] === 'number' && isFinite(contaAtual[i])) {
+                                        conta += `Add ${contaAtual[i]}\n`;
+                                    } else if(contaAtual[i] != '') {
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}\n`)
+                                        conta+= `Add i${counter}\n`
+                                        counter++
+                                    }
+                                }
+                                conta += `Store ${varDefinida}\n`
+                                break;
+                            case '-':
+                                contaAtual = contaAtual.split(lastOperation)
+                                conta += `LOAD ${varDefinida}\n`
+                                for(let i in contaAtual) {
+                                    if(typeof contaAtual[i] === 'number' && isFinite(contaAtual[i])) {
+                                        conta += `Subt ${contaAtual[i]}\n`;
+                                    } else if(contaAtual[i] != ''){
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}\n`)
+                                        conta+= `Subt i${counter}\n`
+                                        counter++
+                                    }
+                                }
+                                conta += `Store ${varDefinida}\n`
+                                break;
+                            case '*':
+                                contaAtual = contaAtual.split(lastOperation)
+                                
+                                for(let i in contaAtual) 
+                                    if(contaAtual[i] != '') 
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}`)
+                                
+                                conta += `MULTIPLICACAOi${counter}, load SUM\n`
+                                conta += `Add ${varDefinida}\n`
+                                conta += `Store SUM\n`
+                                conta += `Load i${counter}\n`
+                                conta += `Subt v1\n`
+                                conta += `Store i${counter}\n`
+                                conta += `Skipcond 400\n`
+                                conta += `Jump MULTIPLICACAOi${counter}\n`
+                                counter++
+                                break;
+                            case '/':
+                                break;
+                        }
                     }
 
-                    break
+                    lastOperation = linha[i]
                 }
-            }
-
-            valores = linha.slice(linha.indexOf('=') + 1, linha.length).replace(';', '').split(operation);
-
-            switch(operation) {
-                case '+':
-                    if(variaveisUsadas.length > 0) {
-                        for(let i in variaveisUsadas) {
-                            conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                            conta += `ADD ${variaveisUsadas[i]}\n`
-                        }
-                    }
-
-                    for(let i in valores) {
-                        variables.push(`i${counter}, DEC ${valores[i]}\n`)
-                        conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                        conta += `ADD i${counter}\n`
-                        conta += `STORE ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                        counter++
-                    }
-
-                    obj[linha] = conta
-                    break;
-                case '-':
-                    if(variaveisUsadas.length > 0) {
-                        for(let i in variaveisUsadas) {
-                            conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                            conta += `ADD ${variaveisUsadas[i]}\n`
-                        }
-                    }
-
-                    for(let i in valores) {
-                        variables.push(`i${counter}, DEC ${valores[i]}\n`)
-                        conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                        conta += `SUBT i${counter}\n`
-                        conta += `STORE ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                        counter++
-                    }
-
-                    obj[linha] = conta
-                    break;
-                case '*':
-                    if(variaveisUsadas.length > 0) {
-                        for(let i in variaveisUsadas) {
-                            conta += `LOAD ${linha.slice(0, linha.indexOf('=')).toUpperCase()}\n`
-                            conta += `ADD ${variaveisUsadas[i]}\n`
-                        }
-                    }
-                    break;
-                case '/':
-                    break;
             }
 
             if(conta != undefined)
@@ -264,7 +390,16 @@ sum, dec 0
         }
 
 
-        
+        function verficaOperacao(operacao) {
+            for(let op in operacoes) {
+                if(operacoes[op] === operacao) {
+                    return true
+                }
+            }
+
+            return false
+        }
+
 
         // Adicionado função à classe String do Javascript para obter o valor em hexadecimal de uma string
         String.prototype.hexEncode = function(){
