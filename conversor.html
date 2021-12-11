@@ -156,8 +156,6 @@ dividendo, dec -1
 
                 if((linha.includes('int') && !linha.includes('print')) || linha.includes('char') || linha.includes('float') || linha.includes('void')) {
                     convertTypeToMarie(linha.trim());                
-                } else if(linha.includes('if')) {
-
                 } else if(linha.includes('printf')) {
                     convertPrintToMarie(linha.trim());
                 } else if(linha.includes('/') || linha.includes('*') || linha.includes('-') || linha.includes('+')) {
@@ -377,6 +375,24 @@ dividendo, dec -1
                                 counter++
                                 break;
                             case '/':
+                                contaAtual = contaAtual.split(lastOperation)
+                                
+                                for(let i in contaAtual) 
+                                    if(contaAtual[i] != '') 
+                                        variables.push(`i${counter}, DEC ${contaAtual[i]}`)
+                                
+                                conta += `DIVISAO, Load DIVIDENDO\n`
+                                conta += `Add v1\n`
+                                conta += `Store DIVIDENDO\n`
+                                conta += `Load ${varDefinida}\n`
+                                conta += `Subt i${counter}\n`
+                                conta += `Store ${varDefinida}\n`
+                                conta += `Skipcond 000\n`
+                                conta += `Jump DIVISAO\n`
+                                conta += `Load ${varDefinida}\n`
+                                conta += `Subt ${varDefinida}\n`
+                                conta += `Add DIVIDENDO\n`
+                                conta += `Store ${varDefinida}\n`
                                 break;
                         }
                     }
